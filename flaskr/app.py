@@ -11,7 +11,7 @@ from vistas import VistaSignUp, VistaLogIn
 from modelos import db
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:admin//98*@localhost:5432/converterTool'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:admin//*@localhost:5432/converterTool'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JWT_SECRET_KEY'] = 'frase-secreta'
 app.config['PROPAGATE_EXCEPTIONS'] = True
