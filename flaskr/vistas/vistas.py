@@ -1,3 +1,4 @@
+from ast import Str
 from email.mime import audio
 from fileinput import filename
 import os
@@ -6,8 +7,8 @@ from flask_jwt_extended import jwt_required, create_access_token, get_jwt, get_j
 from flask_restful import Resource
 from sqlalchemy.exc import IntegrityError
 from flask import jsonify
-from app import ALLOWED_EXTENSIONS, UPLOAD_FOLDER
 from werkzeug.utils import secure_filename
+import time
 
 from modelos import db, User, UserSchema, Task, EnumTaskStatus, TaskSchema
 
@@ -50,9 +51,26 @@ class VistaLogIn(Resource):
 class VistaTasks(Resource):
     @jwt_required()
     def post(self):
+        PATH_FILES = os.getcwd() + "\\files\\"
         id_user = get_jwt_identity()
+        print(PATH_FILES)
+        # You should change 'test' to your preferred folder.
+        MYDIR = (str(id_user))
+        user_folder = PATH_FILES + '\\' + str(id_user)
+        CHECK_FOLDER = os.path.exists(user_folder)
+
+        # If folder doesn't exist, then create it.
+        if not CHECK_FOLDER:
+            os.makedirs(user_folder)
+            print("created folder : ", user_folder)
+
+        else:
+            print(user_folder, "folder already exists.")
         audio_file = request.files["file"]
-        print(type(audio_file))
+        file_path = user_folder + '\\' + str(time.time())+'_'+ audio_file.filename
+        audio_file.save(file_path)
+
+                
                 
         # filename = request.json.get("filename")
         # new_format = request.json.get("new_format")
