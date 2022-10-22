@@ -105,6 +105,21 @@ class VistaTasks(Resource):
  
         return [ task_schema.dump(task) for task in tasks ]
 
+
+class VistaQueue(Resource):
+    
+    def post(self):
+        print(request.json["id"])
+        try:
+            task = Task.query.filter(Task.id == request.json["id"]).first()
+            print(task)
+            task.status = EnumTaskStatus.processed
+            db.session.commit()
+            return "Tarea " + "procesada exitosamente!", 200  
+        except:
+            return "Bad request!", 400
+            
+
     
     
 
