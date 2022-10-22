@@ -9,6 +9,7 @@ from sqlalchemy.exc import IntegrityError
 from flask import jsonify
 from werkzeug.utils import secure_filename
 import time
+from ..tareas import convert_file
 
 from modelos import db, User, UserSchema, Task, EnumTaskStatus, TaskSchema
 
@@ -70,7 +71,7 @@ class VistaTasks(Resource):
         file_path = user_folder + '\\' + str(time.time())+'_'+ audio_file.filename
         audio_file.save(file_path)
 
-                
+        convert_file.delay(1, 1)
                 
         # filename = request.json.get("filename")
         # new_format = request.json.get("new_format")
