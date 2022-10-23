@@ -14,12 +14,12 @@ def convert_file(new_task_id, new_format, user_folder, filename, original_format
         plain_file_name = os.path.splitext(original_file_path)[0]
         new_file_path = plain_file_name +"_Processed." + new_format
         given_audio.export(new_file_path, format=new_format)
-        url = 'http://127.0.0.1:5000/api/queue'
+        url = 'http://10.0.2.15/api/queue'
         obj = {'id': new_task_id}
         response_update_task_state = requests.post(url, json = obj )
         return "Tarea procesada!"
 
-    except:
-        return "Se ha presentado un error"
+    except Exception as e:
+        return "Se ha presentado un error!"
 
     
