@@ -13,6 +13,7 @@ from werkzeug.utils import secure_filename
 import time
 from celery import Celery
 from modelos import db, User, UserSchema, Task, EnumTaskStatus, TaskSchema
+from flask import send_from_directory,send_file
 
 celery_app = Celery(__name__, broker='redis://localhost:6379/0')
 user_schema = UserSchema()
@@ -144,6 +145,26 @@ class VistaTask(Resource):
             return task_schema.dump(task), 200
         else:
             return "La tarea que esta intentado modficar aun no ha sido procesada!", 400
+
+class VistaTaskFiles(Resource):
+    @jwt_required()
+    def get(self,filename):
+        #print(filename)
+        id_user=get_jwt_identity()
+        task_file=Task.query.filter(Task.filename == filename).first()
+        path_usuario_files=os.getcwd() + '/files/' + str(id_user)
+
+        if(task_file is None):
+            return 'No se encontro el archivo, solicitado para el usuario',400
+        else:
+            pathFile=path_usuario_files +"/" + task_file.filename
+            #print(pathFile)
+            existe_archivo=os.path.exists(pathFile)
+            if(existe_archivo):        
+                return send_file(pathFile,as_attachment=True)
+            else:
+                return "archivo no existe",400
+
 
 
 
