@@ -3,6 +3,7 @@ from email.mime import audio
 from fileinput import filename
 from hashlib import new
 import os
+import resource
 from flask import request, abort
 from flask_jwt_extended import jwt_required, create_access_token, get_jwt, get_jwt_identity, JWTManager
 from flask_restful import Resource
@@ -119,9 +120,17 @@ class VistaQueue(Resource):
         except:
             return "Bad request!", 400
             
+class VistaTask(Resource):
+    @jwt_required()
+    def get(self,id_task):
+        return task_schema.dump(Task.query.get_or_404(id_task))
 
-    
-    
+    @jwt_required()
+    def put(self, id_task):
+        task = Task.query.get_or_404(id_task)
+        task.new_format=request.json.get('new_format', task.new_format)
+        db.session.commit()
+        return task_schema.dump(task)
 
 
 

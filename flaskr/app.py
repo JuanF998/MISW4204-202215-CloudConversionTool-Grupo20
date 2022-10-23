@@ -7,7 +7,7 @@ from flask_jwt_extended import create_access_token
 from flask_jwt_extended import get_jwt
 from flask_jwt_extended import jwt_required
 from flask_jwt_extended import JWTManager
-from vistas import VistaSignUp, VistaLogIn, VistaTasks, VistaQueue
+from vistas import VistaSignUp, VistaLogIn, VistaTasks, VistaQueue, VistaTask
 from modelos import db
 
 
@@ -30,6 +30,7 @@ api.add_resource(VistaSignUp, '/api/auth/signup')
 api.add_resource(VistaLogIn, '/api/auth/login')
 api.add_resource(VistaTasks, '/api/tasks')
 api.add_resource(VistaQueue, '/api/queue')
+api.add_resource(VistaTask,'/api/tasks/<int:id_task>')
 jwt = JWTManager(app)
 
 if __name__ == "__main__":
