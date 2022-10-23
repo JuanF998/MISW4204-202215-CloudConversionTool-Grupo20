@@ -128,9 +128,22 @@ class VistaTask(Resource):
     @jwt_required()
     def put(self, id_task):
         task = Task.query.get_or_404(id_task)
-        task.new_format=request.json.get('new_format', task.new_format)
-        db.session.commit()
-        return task_schema.dump(task)
+        if(task.status == EnumTaskStatus.processed):
+            old_format = task.new_format
+            id_user = get_jwt_identity()
+            task.new_format = request.json.get('newFormat')
+            task.status = EnumTaskStatus.uploaded
+            db.session.commit()
+            user_folder = os.getcwd() + '/files/' + str(id_user)
+            size_file_name = len(task.filename)
+            path_file = user_folder + '/' + task.filename[:size_file_name - 4] + '_Processed' + '.' + old_format
+            os.remove(path_file)
+            original_format = task.filename.split(".")[-1]
+            args = (task.id, task.new_format, user_folder, task.filename, original_format)
+            convert_file.apply_async(args=args, queue = 'tasks')
+            return task_schema.dump(task), 200
+        else:
+            return "La tarea que esta intentado modficar aun no ha sido procesada!", 400
 
 
 
