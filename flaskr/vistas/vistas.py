@@ -14,6 +14,7 @@ import time
 from celery import Celery
 from modelos import db, User, UserSchema, Task, EnumTaskStatus, TaskSchema
 from flask import send_from_directory,send_file
+from sqlalchemy import asc,desc
 
 celery_app = Celery(__name__, broker='redis://localhost:6379/0')
 user_schema = UserSchema()
@@ -103,9 +104,10 @@ class VistaTasks(Resource):
         id_user = get_jwt_identity()
         max = request.json.get("max")
         order = request.json.get("order")
-        tasks = Task.query.filter(Task.id_user == id_user).all()[0:max]
         if order:
-            tasks = tasks[::-1]
+            tasks = Task.query.filter(Task.id_user == id_user).order_by(Task.id.desc()).all()[:max]
+        else:
+            tasks = Task.query.filter(Task.id_user == id_user).order_by(Task.id.asc()).all()[:max]           
  
         return [ task_schema.dump(task) for task in tasks ]
 
