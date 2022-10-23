@@ -32,6 +32,7 @@ api.add_resource(VistaTasks, '/api/tasks')
 api.add_resource(VistaQueue, '/api/queue')
 api.add_resource(VistaTask,'/api/tasks/<int:id_task>')
 api.add_resource(VistaTaskFiles,'/api/files/<filename>')
+
 jwt = JWTManager(app)
 
 if __name__ == "__main__":

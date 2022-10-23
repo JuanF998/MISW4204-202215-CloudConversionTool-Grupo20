@@ -146,6 +146,18 @@ class VistaTask(Resource):
         else:
             return "La tarea que esta intentado modficar aun no ha sido procesada!", 400
 
+    
+    @jwt_required()
+    def delete(self,id_task):
+        id_user = get_jwt_identity()
+        task = Task.query.filter(Task.id == id_task , Task.id_user==id_user).first()
+        if(task is None):
+            return "tarea no encotrada", 400
+        else:    
+            db.session.delete(task)
+            db.session.commit()
+            return "archivo borrado!",200
+
 class VistaTaskFiles(Resource):
     @jwt_required()
     def get(self,filename):
