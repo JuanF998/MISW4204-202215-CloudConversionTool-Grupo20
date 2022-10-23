@@ -13,6 +13,8 @@ from werkzeug.utils import secure_filename
 import time
 from celery import Celery
 from modelos import db, User, UserSchema, Task, EnumTaskStatus, TaskSchema
+from flask import send_from_directory,send_file
+from sqlalchemy import asc,desc
 
 celery_app = Celery(__name__, broker='redis://localhost:6379/0')
 user_schema = UserSchema()
@@ -86,7 +88,9 @@ class VistaTasks(Resource):
                     new_task = Task(filename = filename, new_format = new_format, id_user = id_user)
                     db.session.add(new_task)
                     db.session.commit()
-                    args = (new_task.id, new_format, user_folder, filename, original_format)
+                    user = User.query.filter_by(id=id_user).first()
+                    user_email = user.email
+                    args = (new_task.id, new_format, user_folder, filename, original_format, user_email)                  
                     convert_file.apply_async(args=args, queue = 'tasks')
                     return task_schema.dump(new_task)
             else:
@@ -100,9 +104,10 @@ class VistaTasks(Resource):
         id_user = get_jwt_identity()
         max = request.json.get("max")
         order = request.json.get("order")
-        tasks = Task.query.filter(Task.id_user == id_user).all()[0:max]
         if order:
-            tasks = tasks[::-1]
+            tasks = Task.query.filter(Task.id_user == id_user).order_by(Task.id.desc()).all()[:max]
+        else:
+            tasks = Task.query.filter(Task.id_user == id_user).order_by(Task.id.asc()).all()[:max]           
  
         return [ task_schema.dump(task) for task in tasks ]
 
@@ -139,11 +144,80 @@ class VistaTask(Resource):
             path_file = user_folder + '/' + task.filename[:size_file_name - 4] + '_Processed' + '.' + old_format
             os.remove(path_file)
             original_format = task.filename.split(".")[-1]
-            args = (task.id, task.new_format, user_folder, task.filename, original_format)
+            user = User.query.filter_by(id=id_user).first()
+            user_email = user.email
+            args = (task.id, task.new_format, user_folder, task.filename, original_format,user_email)
             convert_file.apply_async(args=args, queue = 'tasks')
             return task_schema.dump(task), 200
         else:
             return "La tarea que esta intentado modficar aun no ha sido procesada!", 400
+
+    
+    @jwt_required()
+    def delete(self,id_task):
+        id_user = get_jwt_identity()
+        task = Task.query.filter(Task.id == id_task , Task.id_user==id_user).first()
+        if(task is None):
+            return "tarea no encotrada", 400
+        else:    
+            if(task.status==EnumTaskStatus.processed):
+                db.session.delete(task)
+                db.session.commit()
+                path_folder=os.getcwd() + '/files/' + str(id_user)
+                path_file_original=path_folder + "/" + task.filename
+                print("path archivo original->" + path_file_original)
+
+                existe_archivo=os.path.exists(path_file_original)
+                if(existe_archivo):
+                    os.remove(path_file_original)
+                    print("Archivo Borrado: archivo original")
+                else:
+                    print("no encontro path: archivo original")
+
+
+                path_file_newfile=path_folder + "/" + task.filename[:len(task.filename) - 4]+"_Processed."+task.new_format
+                print("path archivo newfile->" + path_file_newfile)
+                existe_archivo=os.path.exists(path_file_newfile)
+
+                if(existe_archivo):
+                    os.remove(path_file_newfile)
+                    print("Archivo Borrado: archivo nuevo")
+                else:
+                    print("no encontro path: archivo nuevo")
+
+                
+
+                return "archivo borrado!",200
+            else:
+                return "archivo no ha sido procesado!",400
+
+class VistaTaskFiles(Resource):
+    @jwt_required()
+    def get(self,filename):
+        #print(filename)
+        id_user=get_jwt_identity()
+        #task_file=Task.query.filter(Task.filename == filename).first()
+        path_usuario_files=os.getcwd() + '/files/' + str(id_user)
+        pathFile=path_usuario_files +"/" + filename
+        #print(pathFile)
+        existe_archivo=os.path.exists(pathFile)
+        if(existe_archivo):        
+            return send_file(pathFile,as_attachment=True)
+        else:
+            return "archivo no existe",400
+
+
+        # if(task_file is None):
+        #     return 'No se encontro el archivo, solicitado para el usuario',400
+        # else:
+        #     pathFile=path_usuario_files +"/" + task_file.filename
+        #     #print(pathFile)
+        #     existe_archivo=os.path.exists(pathFile)
+        #     if(existe_archivo):        
+        #         return send_file(pathFile,as_attachment=True)
+        #     else:
+        #         return "archivo no existe",400
+
 
 
 

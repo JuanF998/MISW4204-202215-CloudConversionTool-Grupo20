@@ -2,11 +2,12 @@ import os
 from celery import Celery
 from pydub import AudioSegment
 import requests
+from notificacion import notificate
 
 celery_app = Celery(__name__, broker='redis://localhost:6379/0')
 
 @celery_app.task(name='convert_file')
-def convert_file(new_task_id, new_format, user_folder, filename, original_format):
+def convert_file(new_task_id, new_format, user_folder, filename, original_format, user_email):
 
     try:
         original_file_path = user_folder + '/' + filename
@@ -17,6 +18,7 @@ def convert_file(new_task_id, new_format, user_folder, filename, original_format
         url = 'http://10.0.2.15/api/queue'
         obj = {'id': new_task_id}
         response_update_task_state = requests.post(url, json = obj )
+        notificate(user_email, filename, new_format, new_task_id)
         return "Tarea procesada!"
 
     except Exception as e:
