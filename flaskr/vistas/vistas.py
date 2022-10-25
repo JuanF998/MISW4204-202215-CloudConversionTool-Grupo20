@@ -1,4 +1,5 @@
 from ast import Str
+import datetime
 from email.mime import audio
 from fileinput import filename
 from hashlib import new
@@ -120,6 +121,7 @@ class VistaQueue(Resource):
             task = Task.query.filter(Task.id == request.json["id"]).first()
             print(task)
             task.status = EnumTaskStatus.processed
+            task.time_file_processed = datetime.datetime.utcnow()
             db.session.commit()
             return "Tarea " + "procesada exitosamente!", 200  
         except:
@@ -138,6 +140,7 @@ class VistaTask(Resource):
             id_user = get_jwt_identity()
             task.new_format = request.json.get('newFormat')
             task.status = EnumTaskStatus.uploaded
+            task.time_file_processed = None
             db.session.commit()
             user_folder = os.getcwd() + '/files/' + str(id_user)
             size_file_name = len(task.filename)

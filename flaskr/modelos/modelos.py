@@ -33,6 +33,7 @@ class Task(db.Model):
     timestamp= db.Column(db.DateTime, default=datetime.datetime.utcnow)
     status = db.Column(db.Enum(EnumTaskStatus), default=EnumTaskStatus.uploaded)
     id_user = db.Column(db.Integer, db.ForeignKey('user.id'))
+    time_file_processed = db.Column(db.DateTime, default = None, nullable = True)
     
 class UserSchema(SQLAlchemyAutoSchema):
     class Meta:
