@@ -142,7 +142,7 @@ class VistaTask(Resource):
             task.status = EnumTaskStatus.uploaded
             task.time_file_processed = None
             db.session.commit()
-            user_folder = os.getcwd() + '/files/' + str(id_user)
+            user_folder = '/nfs/general/files/' + str(id_user)
             size_file_name = len(task.filename)
             path_file = user_folder + '/' + task.filename[:size_file_name - 4] + '_Processed' + '.' + old_format
             os.remove(path_file)
@@ -166,7 +166,7 @@ class VistaTask(Resource):
             if(task.status==EnumTaskStatus.processed):
                 db.session.delete(task)
                 db.session.commit()
-                path_folder=os.getcwd() + '/files/' + str(id_user)
+                path_folder = '/nfs/general/files/' + str(id_user)
                 path_file_original=path_folder + "/" + task.filename
                 print("path archivo original->" + path_file_original)
 
@@ -200,7 +200,7 @@ class VistaTaskFiles(Resource):
         #print(filename)
         id_user=get_jwt_identity()
         #task_file=Task.query.filter(Task.filename == filename).first()
-        path_usuario_files=os.getcwd() + '/files/' + str(id_user)
+        path_usuario_files= '/nfs/general/files/' + str(id_user)
         pathFile=path_usuario_files +"/" + filename
         #print(pathFile)
         existe_archivo=os.path.exists(pathFile)
