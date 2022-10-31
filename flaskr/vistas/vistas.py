@@ -17,7 +17,7 @@ from modelos import db, User, UserSchema, Task, EnumTaskStatus, TaskSchema
 from flask import send_from_directory,send_file
 from sqlalchemy import asc,desc
 
-celery_app = Celery(__name__, broker='redis://localhost:6379/0')
+celery_app = Celery(__name__, broker='redis://10.0.2.14:6379/0')
 user_schema = UserSchema()
 task_schema = TaskSchema()
 
@@ -66,7 +66,7 @@ class VistaTasks(Resource):
         original_format = audio_file.filename.split(".")[-1]
         if(original_format == "mp3" or original_format == "wav" or original_format == "ogg"):
             if(new_format == "mp3" or new_format == "wav" or new_format == "ogg"):
-                PATH_FILES = os.getcwd() + "/files/"
+                PATH_FILES ="/nfs/general/files"
                 id_user = get_jwt_identity()
                 MYDIR = (str(id_user))
                 user_folder = PATH_FILES + '/' + str(id_user)

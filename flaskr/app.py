@@ -1,3 +1,4 @@
+import os
 from flask import Flask
 from flask_cors import CORS, cross_origin
 from flask_jwt_extended import JWTManager
@@ -12,7 +13,8 @@ from modelos import db
 
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:admin@localhost:5432/convertertool'
+db_connection_string = os.environ['DB_CONNECTION_STRING']
+app.config['SQLALCHEMY_DATABASE_URI'] = db_connection_string
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JWT_SECRET_KEY'] = 'frase-secreta'
 app.config['PROPAGATE_EXCEPTIONS'] = True
