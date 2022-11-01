@@ -57,7 +57,6 @@ class VistaLogIn(Resource):
             token_de_acceso = create_access_token(identity=user.id)
             return {"mensaje": "Inicio de sesión exitoso!", "token": token_de_acceso}
 
-
 class VistaTasks(Resource):
     @jwt_required()
     def post(self):
