@@ -16,14 +16,48 @@ from celery import Celery
 from modelos import db, User, UserSchema, Task, EnumTaskStatus, TaskSchema
 from flask import send_from_directory,send_file
 from sqlalchemy import asc,desc
+from google.cloud import storage
 
-celery_app = Celery(__name__, broker='redis://10.0.2.14:6379/0')
+os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = '/home/crackmayo/Desktop/MISW4204-202215-CloudConversionTool-Grupo20/flaskr/vistas/ServiceKey_GoogleCloud.json'
+storage_client = storage.Client()
+
+celery_app = Celery(__name__, broker='redis://localhost:6379/0')
 user_schema = UserSchema()
 task_schema = TaskSchema()
 
 @celery_app.task(name='convert_file')
 def convert_file(*args):
     pass
+
+def upload_to_bucket(blob_name, file_path, bucket_name):
+    bucket = storage_client.get_bucket(bucket_name)
+    blob = bucket.blob(blob_name)
+    blob.upload_from_filename(file_path)
+    os.remove(file_path)
+    return blob
+
+def blob_exists(bucket_name, filename):
+   bucket = storage_client.get_bucket(bucket_name)
+   blob = bucket.blob(filename)
+   return blob.exists()
+
+def delete_blob(bucket_name, blob_name):
+    bucket = storage_client.bucket(bucket_name)
+    blob = bucket.blob(blob_name)
+    blob.delete()
+
+def generate_download_signed_url(bucket_name, blob_name):
+    bucket = storage_client.bucket(bucket_name)
+    blob = bucket.blob(blob_name)
+
+    url = blob.generate_signed_url(
+        version="v4",
+        # This URL is valid for 5 minutes
+        expiration=datetime.timedelta(minutes=5),
+        # Allow GET requests using this URL.
+        method="GET",
+    )
+    return url
 
 class VistaSignUp(Resource):
 
@@ -66,7 +100,7 @@ class VistaTasks(Resource):
         original_format = audio_file.filename.split(".")[-1]
         if(original_format == "mp3" or original_format == "wav" or original_format == "ogg"):
             if(new_format == "mp3" or new_format == "wav" or new_format == "ogg"):
-                PATH_FILES ="/nfs/general/files"
+                PATH_FILES = os.getcwd() + "/files/"
                 id_user = get_jwt_identity()
                 MYDIR = (str(id_user))
                 user_folder = PATH_FILES + '/' + str(id_user)
@@ -79,6 +113,7 @@ class VistaTasks(Resource):
                 filename = str(time.time())+'_'+ audio_file.filename
                 file_path = user_folder + '/' + filename
                 audio_file.save(file_path)
+                upload_to_bucket("files/" + str(id_user) + "/" + filename, file_path, "cloudconvertertoolstorage")
                 original_format = audio_file.filename.split(".")[-1]
                 
                 if filename is None or len(filename) < 1:
@@ -91,7 +126,7 @@ class VistaTasks(Resource):
                     db.session.commit()
                     user = User.query.filter_by(id=id_user).first()
                     user_email = user.email
-                    args = (new_task.id, new_format, user_folder, filename, original_format, user_email)                  
+                    args = (new_task.id, new_format, user_folder, filename, original_format, user_email, id_user)                  
                     convert_file.apply_async(args=args, queue = 'tasks')
                     return task_schema.dump(new_task)
             else:
@@ -134,6 +169,7 @@ class VistaTask(Resource):
 
     @jwt_required()
     def put(self, id_task):
+        bucket_name = "cloudconvertertoolstorage"
         task = Task.query.get_or_404(id_task)
         if(task.status == EnumTaskStatus.processed):
             old_format = task.new_format
@@ -142,14 +178,20 @@ class VistaTask(Resource):
             task.status = EnumTaskStatus.uploaded
             task.time_file_processed = None
             db.session.commit()
-            user_folder = '/nfs/general/files/' + str(id_user)
-            size_file_name = len(task.filename)
-            path_file = user_folder + '/' + task.filename[:size_file_name - 4] + '_Processed' + '.' + old_format
-            os.remove(path_file)
+
+            path_folder = 'files/' + str(id_user)
+            processed_blob_name = path_folder + "/" + task.filename[:len(task.filename) - 4]+"_Processed." + old_format
+
+            if(blob_exists(bucket_name, processed_blob_name)):
+                delete_blob(bucket_name, processed_blob_name)
+            else:
+                print("No se encontro el blob: archivo procesado")
+
+            user_folder = os.getcwd() + "/files/" + str(id_user)
             original_format = task.filename.split(".")[-1]
             user = User.query.filter_by(id=id_user).first()
             user_email = user.email
-            args = (task.id, task.new_format, user_folder, task.filename, original_format,user_email)
+            args = (task.id, task.new_format, user_folder, task.filename, original_format,user_email, id_user)
             convert_file.apply_async(args=args, queue = 'tasks')
             return task_schema.dump(task), 200
         else:
@@ -158,68 +200,44 @@ class VistaTask(Resource):
     
     @jwt_required()
     def delete(self,id_task):
+        bucket_name = "cloudconvertertoolstorage"
         id_user = get_jwt_identity()
         task = Task.query.filter(Task.id == id_task , Task.id_user==id_user).first()
         if(task is None):
-            return "tarea no encotrada", 400
+            return "Tarea no encotrada", 400
         else:    
             if(task.status==EnumTaskStatus.processed):
                 db.session.delete(task)
                 db.session.commit()
-                path_folder = '/nfs/general/files/' + str(id_user)
-                path_file_original=path_folder + "/" + task.filename
-                print("path archivo original->" + path_file_original)
+                path_folder = 'files/' + str(id_user)
+                original_blob_name = path_folder + "/" + task.filename
 
-                existe_archivo=os.path.exists(path_file_original)
-                if(existe_archivo):
-                    os.remove(path_file_original)
-                    print("Archivo Borrado: archivo original")
+                if(blob_exists(bucket_name, original_blob_name)):
+                    delete_blob(bucket_name, original_blob_name)
                 else:
-                    print("no encontro path: archivo original")
+                    print("No se encontro el blob: archivo original")
 
-
-                path_file_newfile=path_folder + "/" + task.filename[:len(task.filename) - 4]+"_Processed."+task.new_format
-                print("path archivo newfile->" + path_file_newfile)
-                existe_archivo=os.path.exists(path_file_newfile)
-
-                if(existe_archivo):
-                    os.remove(path_file_newfile)
-                    print("Archivo Borrado: archivo nuevo")
+                processed_blob_name = path_folder + "/" + task.filename[:len(task.filename) - 4]+"_Processed." + task.new_format
+              
+                if(blob_exists(bucket_name, processed_blob_name)):
+                    delete_blob(bucket_name, processed_blob_name)
                 else:
-                    print("no encontro path: archivo nuevo")
+                    print("No se encontro el blob: archivo procesado")
 
-                
-
-                return "archivo borrado!",200
+                return "Tarea eliminada, archivos borrados!",200
             else:
-                return "archivo no ha sido procesado!",400
+                return "La tarea no ha sido procesada aun!",400
 
 class VistaTaskFiles(Resource):
     @jwt_required()
     def get(self,filename):
-        #print(filename)
+        bucket_name = "cloudconvertertoolstorage"
         id_user=get_jwt_identity()
-        #task_file=Task.query.filter(Task.filename == filename).first()
-        path_usuario_files= '/nfs/general/files/' + str(id_user)
-        pathFile=path_usuario_files +"/" + filename
-        #print(pathFile)
-        existe_archivo=os.path.exists(pathFile)
-        if(existe_archivo):        
-            return send_file(pathFile,as_attachment=True)
+        blob_name = 'files/' + str(id_user) + '/' + filename
+        if(blob_exists(bucket_name, blob_name)):  
+            return generate_download_signed_url(bucket_name, blob_name)
         else:
-            return "archivo no existe",400
-
-
-        # if(task_file is None):
-        #     return 'No se encontro el archivo, solicitado para el usuario',400
-        # else:
-        #     pathFile=path_usuario_files +"/" + task_file.filename
-        #     #print(pathFile)
-        #     existe_archivo=os.path.exists(pathFile)
-        #     if(existe_archivo):        
-        #         return send_file(pathFile,as_attachment=True)
-        #     else:
-        #         return "archivo no existe",400
+            return "Archivo no existe!",400
 
 
 
