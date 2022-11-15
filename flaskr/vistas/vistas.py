@@ -138,8 +138,8 @@ class VistaTasks(Resource):
     @jwt_required()
     def get(self):
         id_user = get_jwt_identity()
-        max = request.json.get("max")
-        order = request.json.get("order")
+        max = int(request.args.get('max'))
+        order = int(request.args.get('order'))
         if order:
             tasks = Task.query.filter(Task.id_user == id_user).order_by(Task.id.desc()).all()[:max]
         else:
