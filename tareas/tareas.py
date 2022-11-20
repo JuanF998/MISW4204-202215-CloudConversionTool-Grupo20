@@ -13,7 +13,7 @@ subscriber = pubsub_v1.SubscriberClient()
 subscription_path = 'projects/desarrollosoftwarenubegrupo20/subscriptions/files_processing-sub'
 
 def download_file_from_bucket(blob_name, file_path, bucket_name):
-    
+
     bucket = storage_client.get_bucket(bucket_name)
     blob = bucket.blob(blob_name)
     with open(file_path, 'wb') as f:
@@ -61,12 +61,12 @@ def callback(message):
     except Exception as e:
         return str(e)
 
-streaming_pull_future = subscriber.subscribe(subscription_path, callback=callback)
+streaming_pull_task = subscriber.subscribe(subscription_path, callback=callback)
 print(f'Listening for tasks on {subscription_path}')
 
 with subscriber:
     try:
-        streaming_pull_future.result()
+        streaming_pull_task.result()
     except TimeoutError:
-        streaming_pull_future.cancel()
-        streaming_pull_future.result()
+        streaming_pull_task.cancel()
+        streaming_pull_task.result()
