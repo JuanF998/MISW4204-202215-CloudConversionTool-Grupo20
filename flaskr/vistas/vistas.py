@@ -18,11 +18,11 @@ from sqlalchemy import asc,desc
 from google.cloud import storage
 from google.cloud import pubsub_v1
 
-os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = '/home/crackmayo/Desktop/MISW4204-202215-CloudConversionTool-Grupo20/flaskr/vistas/ServiceKey_GoogleCloud.json'
+os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = '/home/juanft998/MISW4204-202215-CloudConversionTool-Grupo20/flaskr/vistas/ServiceKey_GoogleCloud.json'
 storage_client = storage.Client()
 
 publisher = pubsub_v1.PublisherClient()
-topic_path = 'projects/desarrollosoftwarenubegrupo20/topics/files_processing'
+topic_path = 'projects/desarrollosoftwarenubegrupo20/topics/files_processing-sub'
 
 user_schema = UserSchema()
 task_schema = TaskSchema()

@@ -6,11 +6,11 @@ from google.cloud import storage
 from google.cloud import pubsub_v1
 from concurrent.futures import TimeoutError
 
-os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = '/home/crackmayo/Desktop/MISW4204-202215-CloudConversionTool-Grupo20/flaskr/vistas/ServiceKey_GoogleCloud.json'
+os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = '/home/juanft998/MISW4204-202215-CloudConversionTool-Grupo20/flaskr/vistas/ServiceKey_GoogleCloud.json'
 storage_client = storage.Client()
 
 subscriber = pubsub_v1.SubscriberClient()
-subscription_path = 'projects/desarrollosoftwarenubegrupo20/subscriptions/files_processing-sub'
+subscription_path = 'projects/desarrollosoftwarenubegrupo20/subscriptions/files_processing-sub-sub'
 
 def download_file_from_bucket(blob_name, file_path, bucket_name):
 
