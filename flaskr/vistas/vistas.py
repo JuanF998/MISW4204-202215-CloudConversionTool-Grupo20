@@ -276,8 +276,8 @@ class VistaTaskFiles(Resource):
         id_user = get_jwt_identity()
         blob_name = 'files/' + str(id_user) + '/' + filename
         download_path = os.getcwd() + '/' + filename 
-        download_file_from_bucket(blob_name, download_path, "cloudconvertertoolstorage")
         if(blob_exists(bucket_name, blob_name)):  
+            download_file_from_bucket(blob_name, download_path, "cloudconvertertoolstorage")
             return send_file(download_path,as_attachment=True)
         else:
             return "Archivo no existe!",400
