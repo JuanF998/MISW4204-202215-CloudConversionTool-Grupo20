@@ -18,46 +18,46 @@ from sqlalchemy import asc,desc
 from google.cloud import storage
 from google.cloud import pubsub_v1
 
-os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = '/home/juanft998/MISW4204-202215-CloudConversionTool-Grupo20/flaskr/vistas/ServiceKey_GoogleCloud.json'
-storage_client = storage.Client()
+# os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = '/home/crackmayo/Desktop/MISW4204-202215-CloudConversionTool-Grupo20/flaskr/vistas/ServiceKey_GoogleCloud.json'
+# storage_client = storage.Client()
 
-publisher = pubsub_v1.PublisherClient()
-topic_path = 'projects/desarrollosoftwarenubegrupo20/topics/files_processing-sub'
+# publisher = pubsub_v1.PublisherClient()
+# topic_path = 'projects/desarrollosoftwarenubegrupo20/topics/files_processing-sub'
 
 user_schema = UserSchema()
 task_schema = TaskSchema()
 
-def upload_to_bucket(blob_name, file_path, bucket_name):
+# def upload_to_bucket(blob_name, file_path, bucket_name):
 
-    bucket = storage_client.get_bucket(bucket_name)
-    blob = bucket.blob(blob_name)
-    blob.upload_from_filename(file_path)
-    os.remove(file_path)
-    return blob
+#     bucket = storage_client.get_bucket(bucket_name)
+#     blob = bucket.blob(blob_name)
+#     blob.upload_from_filename(file_path)
+#     os.remove(file_path)
+#     return blob
 
-def blob_exists(bucket_name, filename):
+# def blob_exists(bucket_name, filename):
 
-   bucket = storage_client.get_bucket(bucket_name)
-   blob = bucket.blob(filename)
-   return blob.exists()
+#    bucket = storage_client.get_bucket(bucket_name)
+#    blob = bucket.blob(filename)
+#    return blob.exists()
 
-def delete_blob(bucket_name, blob_name):
+# def delete_blob(bucket_name, blob_name):
 
-    bucket = storage_client.bucket(bucket_name)
-    blob = bucket.blob(blob_name)
-    blob.delete()
+#     bucket = storage_client.bucket(bucket_name)
+#     blob = bucket.blob(blob_name)
+#     blob.delete()
 
-def generate_download_signed_url(bucket_name, blob_name):
+# def generate_download_signed_url(bucket_name, blob_name):
 
-    bucket = storage_client.bucket(bucket_name)
-    blob = bucket.blob(blob_name)
+#     bucket = storage_client.bucket(bucket_name)
+#     blob = bucket.blob(blob_name)
 
-    url = blob.generate_signed_url(
-        version="v4",
-        expiration=datetime.timedelta(minutes=5),
-        method="GET",
-    )
-    return url
+#     url = blob.generate_signed_url(
+#         version="v4",
+#         expiration=datetime.timedelta(minutes=5),
+#         method="GET",
+#     )
+#     return url
 
 class VistaSignUp(Resource):
 
@@ -114,7 +114,7 @@ class VistaTasks(Resource):
                 filename = str(time.time())+'_'+ audio_file.filename
                 file_path = user_folder + '/' + filename
                 audio_file.save(file_path)
-                upload_to_bucket("files/" + str(id_user) + "/" + filename, file_path, "cloudconvertertoolstorage")
+                #upload_to_bucket("files/" + str(id_user) + "/" + filename, file_path, "cloudconvertertoolstorage")
                 original_format = audio_file.filename.split(".")[-1]
                 
                 if filename is None or len(filename) < 1:
@@ -140,7 +140,7 @@ class VistaTasks(Resource):
                         'id_user': str(id_user)
                     }
 
-                    publisher.publish(topic_path, data, **attributes)
+                    #publisher.publish(topic_path, data, **attributes)
 
                     return task_schema.dump(new_task)
             else:
@@ -200,10 +200,10 @@ class VistaTask(Resource):
             path_folder = 'files/' + str(id_user)
             processed_blob_name = path_folder + "/" + task.filename[:len(task.filename) - 4]+"_Processed." + old_format
 
-            if(blob_exists(bucket_name, processed_blob_name)):
-                delete_blob(bucket_name, processed_blob_name)
-            else:
-                print("No se encontro el blob: archivo procesado")
+            # if(blob_exists(bucket_name, processed_blob_name)):
+            #     delete_blob(bucket_name, processed_blob_name)
+            # else:
+            #     print("No se encontro el blob: archivo procesado")
 
             user_folder = os.getcwd() + "/files/" + str(id_user)
             original_format = task.filename.split(".")[-1]
@@ -223,7 +223,7 @@ class VistaTask(Resource):
                 'id_user': str(id_user)
             }
 
-            publisher.publish(topic_path, data, **attributes)
+            #publisher.publish(topic_path, data, **attributes)
 
             return task_schema.dump(task), 200
         else:
@@ -244,17 +244,17 @@ class VistaTask(Resource):
                 path_folder = 'files/' + str(id_user)
                 original_blob_name = path_folder + "/" + task.filename
 
-                if(blob_exists(bucket_name, original_blob_name)):
-                    delete_blob(bucket_name, original_blob_name)
-                else:
-                    print("No se encontro el blob: archivo original")
+                # if(blob_exists(bucket_name, original_blob_name)):
+                #     delete_blob(bucket_name, original_blob_name)
+                # else:
+                #     print("No se encontro el blob: archivo original")
 
                 processed_blob_name = path_folder + "/" + task.filename[:len(task.filename) - 4]+"_Processed." + task.new_format
               
-                if(blob_exists(bucket_name, processed_blob_name)):
-                    delete_blob(bucket_name, processed_blob_name)
-                else:
-                    print("No se encontro el blob: archivo procesado")
+                # if(blob_exists(bucket_name, processed_blob_name)):
+                #     delete_blob(bucket_name, processed_blob_name)
+                # else:
+                #     print("No se encontro el blob: archivo procesado")
 
                 return "Tarea eliminada, archivos borrados!",200
             else:
@@ -268,7 +268,8 @@ class VistaTaskFiles(Resource):
         bucket_name = "cloudconvertertoolstorage"
         id_user = get_jwt_identity()
         blob_name = 'files/' + str(id_user) + '/' + filename
-        if(blob_exists(bucket_name, blob_name)):  
-            return generate_download_signed_url(bucket_name, blob_name)
-        else:
-            return "Archivo no existe!",400
+        # if(blob_exists(bucket_name, blob_name)):  
+        #     return generate_download_signed_url(bucket_name, blob_name)
+        # else:
+        #     return "Archivo no existe!",400
+        return "Archivo no existe!",400
