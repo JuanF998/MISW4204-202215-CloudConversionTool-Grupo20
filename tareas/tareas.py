@@ -6,7 +6,7 @@ from google.cloud import storage
 from google.cloud import pubsub_v1
 from concurrent.futures import TimeoutError
 
-os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = '/home/juanft998/MISW4204-202215-CloudConversionTool-Grupo20/flaskr/vistas/ServiceKey_GoogleCloud.json'
+#os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = '/home/crackmayo/Desktop/MISW4204-202215-CloudConversionTool-Grupo20/flaskr/vistas/ServiceKey_GoogleCloud.json'
 storage_client = storage.Client()
 
 subscriber = pubsub_v1.SubscriberClient()
@@ -41,14 +41,14 @@ def callback(message):
     
     try:
         blob_name = 'files/'+ str(id_user) + '/' + filename
-        download_path = user_folder + '/' + filename 
+        download_path = os.getcwd() + '/' + filename 
         download_file_from_bucket(blob_name, download_path, "cloudconvertertoolstorage")
         given_audio = AudioSegment.from_file(download_path, format = original_format)
         plain_file_name = os.path.splitext(download_path)[0]
         new_blob_name = filename.replace('.' + original_format, '') + '_Processed.' + new_format
         new_file_path = plain_file_name +"_Processed." + new_format
         given_audio.export(new_file_path, format=new_format)
-        url = 'http://10.0.2.15/api/queue'
+        url = 'https://desarrollosoftwarenubegrupo20.uc.r.appspot.com/api/queue'
         obj = {'id': new_task_id}
         upload_to_bucket('files/' + str(id_user) + '/' + new_blob_name, new_file_path, "cloudconvertertoolstorage")
         requests.post(url, json = obj)

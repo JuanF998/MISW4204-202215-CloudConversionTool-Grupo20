@@ -53,7 +53,7 @@ def generate_download_signed_url(bucket_name, blob_name):
     blob = bucket.blob(blob_name)
 
     url = blob.generate_signed_url(
-        version="v4",
+        version="v2",
         expiration=datetime.timedelta(minutes=5),
         method="GET",
     )
