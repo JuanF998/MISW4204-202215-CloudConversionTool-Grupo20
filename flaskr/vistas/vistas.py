@@ -53,11 +53,18 @@ def generate_download_signed_url(bucket_name, blob_name):
     blob = bucket.blob(blob_name)
 
     url = blob.generate_signed_url(
-        version="v2",
+        version="v4",
         expiration=datetime.timedelta(minutes=5),
         method="GET",
     )
     return url
+
+def download_file_from_bucket(blob_name, file_path, bucket_name):
+
+    bucket = storage_client.get_bucket(bucket_name)
+    blob = bucket.blob(blob_name)
+    with open(file_path, 'wb') as f:
+        storage_client.download_blob_to_file(blob, f)
 
 class VistaSignUp(Resource):
 
@@ -268,7 +275,9 @@ class VistaTaskFiles(Resource):
         bucket_name = "cloudconvertertoolstorage"
         id_user = get_jwt_identity()
         blob_name = 'files/' + str(id_user) + '/' + filename
+        download_path = os.getcwd() + '/' + filename 
+        download_file_from_bucket(blob_name, download_path, "cloudconvertertoolstorage")
         if(blob_exists(bucket_name, blob_name)):  
-            return generate_download_signed_url(bucket_name, blob_name)
+            return send_file(download_path,as_attachment=True)
         else:
             return "Archivo no existe!",400
